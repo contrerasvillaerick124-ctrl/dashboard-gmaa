@@ -7,58 +7,93 @@ import plotly.graph_objects as go
 
 
 def generar_ishikawa():
-    fig, ax = plt.subplots(figsize=(16, 10))
-    ax.set_xlim(-5, 105)
-    ax.set_ylim(-5, 105)
+    fig, ax = plt.subplots(figsize=(12, 7))
+    ax.set_xlim(0, 100)
+    ax.set_ylim(0, 100)
     ax.axis('off')
     ax.set_facecolor('#FFFFFF')
     fig.patch.set_facecolor('#FFFFFF')
 
-    colores = {
-        'Métodos': '#1F4E78',
-        'Máquinas': '#70AD47',
-        'Materiales': '#ED7D31',
-        'Personas': '#7030A0'
+    # Espina central
+    ax.annotate('', xy=(85, 50), xytext=(5, 50),
+                arrowprops=dict(arrowstyle='->', color='black', lw=4, mutation_scale=30))
+
+    # Recuadro problema en la punta
+    ax.text(85, 50, 'Baja productividad',
+            fontsize=11, fontweight='bold', color='white',
+            ha='center', va='center',
+            bbox=dict(boxstyle="round,pad=0.5", facecolor='#D3D3D3', edgecolor='none'))
+
+    # Espinas diagonales y cajas de categoría
+    espinas = [
+        {'cat': 'Método', 'start': (30, 50), 'end': (20, 85)},
+        {'cat': 'Mano de obra', 'start': (30, 50), 'end': (10, 85)},
+        {'cat': 'Maquinaria', 'start': (50, 50), 'end': (40, 15)},
+        {'cat': 'Materia prima', 'start': (50, 50), 'end': (20, 15)}
+    ]
+
+    for espina in espinas:
+        sx, sy = espina['start']
+        ex, ey = espina['end']
+        ax.plot([sx, ex], [sy, ey], color='black', linewidth=2.5, solid_capstyle='round')
+        ax.text(ex, ey, espina['cat'],
+                fontsize=10, fontweight='bold', color='black',
+                ha='center', va='center',
+                bbox=dict(boxstyle="round,pad=0.3", facecolor='white', edgecolor='black', linewidth=1))
+
+    # Causas horizontales (línea + texto)
+    causas = [
+        # Método (espina de 30,50 a 20,85) - causas hacia la izquierda
+        (75, "Falta de una gestión de calidad, inspección y control en los productos terminados", 'Método'),
+        (65, "Falta de una optimización en la calidad y producción del producto", 'Método'),
+        (55, "Falta de orden, limpieza y obstrucciones en las líneas de producción", 'Método'),
+        # Mano de obra (espina de 30,50 a 10,85)
+        (75, "Entregas de productos fuera de tiempo", 'Mano de obra'),
+        (65, "Falta de capacitaciones a los trabajadores", 'Mano de obra'),
+        # Maquinaria (espina de 50,50 a 40,15)
+        (35, "Fallas y paradas en la producción de calzados", 'Maquinaria'),
+        (25, "Falta de mantenimiento en la fabricación del producto", 'Maquinaria'),
+        # Materia prima (espina de 50,50 a 20,15)
+        (35, "Materia prima de mala calidad", 'Materia prima'),
+        (25, "Desperdicios de M.P y acumulación para el abastecimiento en proceso", 'Materia prima')
+    ]
+
+    # Coordenadas de inicio en cada espina para las causas horizontales
+    # Método: espina va de (30,50) a (20,85). Puntos a lo largo de la diagonal
+    # Mano de obra: espina va de (30,50) a (10,85)
+    # Maquinaria: espina va de (50,50) a (40,15)
+    # Materia prima: espina va de (50,50) a (20,15)
+
+    # Para cada causa, calcular punto en la espina y dibujar línea horizontal
+    espina_points = {
+        'Método': {
+            75: (23, 72.5),
+            65: (24, 67.5),
+            55: (25, 62.5)
+        },
+        'Mano de obra': {
+            75: (13, 77.5),
+            65: (12, 72.5)
+        },
+        'Maquinaria': {
+            35: (43, 37.5),
+            25: (41, 27.5)
+        },
+        'Materia prima': {
+            35: (23, 32.5),
+            25: (22, 22.5)
+        }
     }
 
-    head_x, head_y = 95, 50
-    tail_x = 5
-
-    ax.plot([tail_x, head_x], [head_y, head_y], 'k-', linewidth=3, solid_capstyle='round')
-    ax.annotate('', xy=(head_x, head_y), xytext=(tail_x, head_y),
-                arrowprops=dict(arrowstyle='->', color='#2C3E50', lw=3, mutation_scale=25))
-
-    ax.text(head_x + 1, head_y, 'BAJA PRODUCTIVIDAD',
-            fontsize=13, fontweight='bold', color='#C0392B',
-            ha='left', va='center',
-            bbox=dict(boxstyle="round,pad=0.4", facecolor='#FDF2F2', edgecolor='#C0392B', linewidth=1.5))
-
-    upper_cats = ['Métodos', 'Máquinas']
-    lower_cats = ['Materiales', 'Personas']
-
-    for i, cat in enumerate(upper_cats):
-        y_pos = head_y + 2.0 - i * 2.5
-        x_start = 20 + i * 20
-        ax.plot([x_start, head_x], [y_pos, head_y], color=colores[cat], linewidth=2.5, alpha=0.8)
-        ax.text(x_start - 1, y_pos + 0.5, cat, fontsize=12, fontweight='bold',
-                color=colores[cat], ha='right', va='bottom',
-                bbox=dict(boxstyle="round,pad=0.3", facecolor='white', edgecolor=colores[cat], linewidth=1.5))
-
-    for i, cat in enumerate(lower_cats):
-        y_pos = head_y - 2.0 + i * 2.5
-        x_start = 20 + i * 20
-        ax.plot([x_start, head_x], [y_pos, head_y], color=colores[cat], linewidth=2.5, alpha=0.8)
-        ax.text(x_start - 1, y_pos - 0.5, cat, fontsize=12, fontweight='bold',
-                color=colores[cat], ha='right', va='top',
-                bbox=dict(boxstyle="round,pad=0.3", facecolor='white', edgecolor=colores[cat], linewidth=1.5))
-
-    ax.text(50, 98, 'DIAGRAMA DE ISHIKAWA (CAUSA-EFECTO) - 4M',
-            fontsize=17, fontweight='bold', color='#1F4E78', ha='center')
-
-    legend_elements = [mpatches.Patch(color=colores[c], label=c) for c in colores]
-    ax.legend(handles=legend_elements, loc='lower right', fontsize=10,
-              framealpha=0.9, edgecolor='#E0E0E0', title="Categorías (4M)",
-              title_fontsize=11)
+    for y_causa, texto, categoria in causas:
+        cx, cy = espina_points[categoria][y_causa]
+        # Línea horizontal hacia la izquierda
+        ax.plot([cx - 15, cx], [cy, cy], color='black', linewidth=2, solid_capstyle='round')
+        # Texto a la izquierda de la línea
+        ax.text(cx - 16, cy, texto,
+                fontsize=8, color='black',
+                ha='right', va='center',
+                bbox=dict(boxstyle="round,pad=0.25", facecolor='white', edgecolor='black', linewidth=0.5))
 
     plt.tight_layout()
     return fig
