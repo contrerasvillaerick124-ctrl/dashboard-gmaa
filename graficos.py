@@ -18,12 +18,12 @@ def generar_ishikawa():
     ax.text(86, 50, 'Baja\nproductividad', ha='left', va='center', fontsize=12, fontweight='bold',
             bbox=dict(boxstyle="round,pad=0.5", fc="#f0f0f0", ec="black"))
 
-    # 2. Definir las 4 Espinas (Coordenadas de inicio y fin)
+    # 2. Definir las 4 Espinas (Coordenadas SIMÉTRICAS)
     espinas = {
-        'Mano de obra': {'start': (25, 50), 'end': (15, 85)},
-        'Método':      {'start': (35, 50), 'end': (45, 85)},
-        'Materia prima': {'start': (65, 50), 'end': (55, 15)},
-        'Maquinaria':  {'start': (75, 50), 'end': (85, 15)}
+        'Mano de obra': {'start': (30, 50), 'end': (15, 85)},  # Izquierda Arriba
+        'Método':      {'start': (50, 50), 'end': (35, 85)},  # Derecha Arriba
+        'Materia prima': {'start': (50, 50), 'end': (35, 15)}, # Izquierda Abajo
+        'Maquinaria':  {'start': (70, 50), 'end': (55, 15)}   # Derecha Abajo
     }
 
     for nombre, coords in espinas.items():
