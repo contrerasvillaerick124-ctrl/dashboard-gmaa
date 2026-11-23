@@ -14,49 +14,61 @@ def generar_ishikawa():
     fig.patch.set_facecolor('white')
 
     # 1. Espina Central
-    ax.annotate('', xy=(82, 50), xytext=(10, 50), arrowprops=dict(arrowstyle='->', color='black', lw=3))
-    ax.text(83, 50, 'Baja\nproductividad', ha='left', va='center', fontsize=12, fontweight='bold',
+    ax.annotate('', xy=(85, 50), xytext=(5, 50), arrowprops=dict(arrowstyle='->', color='black', lw=3))
+    ax.text(86, 50, 'Baja\nproductividad', ha='left', va='center', fontsize=12, fontweight='bold',
             bbox=dict(boxstyle="round,pad=0.5", fc="#f0f0f0", ec="black"))
 
-    # 2. Espinas (Categorías)
-    # Arriba
-    ax.plot([25, 40], [50, 85], color='black', lw=2) # Mano de obra
-    ax.plot([40, 55], [50, 85], color='black', lw=2) # Método
-    # Abajo
-    ax.plot([60, 45], [50, 15], color='black', lw=2) # Materia prima
-    ax.plot([60, 75], [50, 15], color='black', lw=2) # Maquinaria
+    # 2. Definir las 4 Espinas (Coordenadas de inicio y fin)
+    espinas = {
+        'Mano de obra': {'start': (25, 50), 'end': (15, 85)},
+        'Método':      {'start': (35, 50), 'end': (45, 85)},
+        'Materia prima': {'start': (65, 50), 'end': (55, 15)},
+        'Maquinaria':  {'start': (75, 50), 'end': (85, 15)}
+    }
 
-    # Cajas de Categorías
-    ax.text(40, 87, 'Mano de obra', ha='center', fontsize=12, fontweight='bold', bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black"))
-    ax.text(55, 87, 'Método', ha='center', fontsize=12, fontweight='bold', bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black"))
-    ax.text(45, 13, 'Materia prima', ha='center', fontsize=12, fontweight='bold', bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black"))
-    ax.text(75, 13, 'Maquinaria', ha='center', fontsize=12, fontweight='bold', bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black"))
+    for nombre, coords in espinas.items():
+        ax.plot([coords['start'][0], coords['end'][0]], [coords['start'][1], coords['end'][1]], color='black', lw=2)
+        # Caja del nombre de la categoría
+        ax.text(coords['end'][0], coords['end'][1] + (3 if coords['end'][1] > 50 else -3), nombre, 
+                ha='center', va='center', fontsize=12, fontweight='bold', 
+                bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black"))
 
-    # 3. Causas (Líneas Horizontales - Ubicaciones exactas para no cruzar)
-    # Función auxiliar para dibujar causa (x_inicio, x_fin, y, texto)
-    def dibujar_causa(x1, x2, y, texto, lado='izq'):
-        ax.plot([x1, x2], [y, y], color='black', lw=1.5)
+    # 3. Función para calcular la intersección y dibujar la causa
+    def dibujar_causa(categoria, y_target, texto, lado='izq'):
+        start = espinas[categoria]['start']
+        end = espinas[categoria]['end']
+        
+        # Interpolación para encontrar el punto exacto (x, y) en la diagonal
+        t = (y_target - start[1]) / (end[1] - start[1])
+        x_interseccion = start[0] + t * (end[0] - start[0])
+        
+        # Dibujar la línea horizontal desde la intersección
         if lado == 'izq':
-            ax.text(x1 - 1, y, texto, ha='right', va='center', fontsize=10, bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="gray"))
+            x_texto = x_interseccion - 15
+            ax.plot([x_texto, x_interseccion], [y_target, y_target], color='black', lw=1.5)
+            ax.text(x_texto - 1, y_target, texto, ha='right', va='center', fontsize=10, bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="gray"))
         else:
-            ax.text(x2 + 1, y, texto, ha='left', va='center', fontsize=10, bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="gray"))
+            x_texto = x_interseccion + 15
+            ax.plot([x_interseccion, x_texto], [y_target, y_target], color='black', lw=1.5)
+            ax.text(x_texto + 1, y_target, texto, ha='left', va='center', fontsize=10, bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="gray"))
 
-    # Mano de obra (Izquierda)
-    dibujar_causa(15, 28, 75, 'Entregas de productos\nfuera de tiempo', 'izq')
-    dibujar_causa(15, 30, 60, 'Falta de capacitaciones\na los trabajadores', 'izq')
+    # 4. Colocar las causas (Usando y_target para que se conecten solas)
+    # Mano de obra
+    dibujar_causa('Mano de obra', 75, 'Entregas de productos\nfuera de tiempo', 'izq')
+    dibujar_causa('Mano de obra', 60, 'Falta de capacitaciones\na los trabajadores', 'izq')
 
-    # Método (Derecha)
-    dibujar_causa(48, 60, 75, 'Falta de una gestión de calidad,\ninspección y control en los productos', 'der')
-    dibujar_causa(50, 60, 62, 'Falta de una optimización en\nla calidad y producción del producto', 'der')
-    dibujar_causa(52, 60, 52, 'Falta de orden, limpieza y\nobstrucciones en las líneas de producción', 'der')
+    # Método
+    dibujar_causa('Método', 75, 'Falta de una gestión de calidad,\ninspección y control en los productos', 'der')
+    dibujar_causa('Método', 62, 'Falta de una optimización en\nla calidad y producción del producto', 'der')
+    dibujar_causa('Método', 55, 'Falta de orden, limpieza y\nobstrucciones en las líneas de producción', 'der')
 
-    # Materia prima (Izquierda)
-    dibujar_causa(15, 32, 40, 'Materia prima de mala calidad', 'izq')
-    dibujar_causa(10, 33, 25, 'Desperdicios de M.P y acumulación\npara el abastecimiento en proceso', 'izq')
+    # Materia prima
+    dibujar_causa('Materia prima', 35, 'Materia prima de mala calidad', 'izq')
+    dibujar_causa('Materia prima', 20, 'Desperdicios de M.P y acumulación\npara el abastecimiento en proceso', 'izq')
 
-    # Maquinaria (Derecha)
-    dibujar_causa(68, 80, 40, 'Fallas y paradas en\nla producción de calzados', 'der')
-    dibujar_causa(70, 80, 25, 'Falta de mantenimiento en\nla fabricación del producto', 'der')
+    # Maquinaria
+    dibujar_causa('Maquinaria', 35, 'Fallas y paradas en\nla producción de calzados', 'der')
+    dibujar_causa('Maquinaria', 20, 'Falta de mantenimiento en\nla fabricación del producto', 'der')
 
     plt.tight_layout()
     return fig
