@@ -15,9 +15,9 @@ def generar_ishikawa():
     fig.patch.set_facecolor('#FFFFFF')
 
     # Espina central
-    ax.plot([10, 80], [50, 50], color='black', linewidth=4, solid_capstyle='round')
+    ax.plot([10, 80], [50, 50], color='black', lw=3, solid_capstyle='round')
     ax.annotate('', xy=(80, 50), xytext=(78, 50),
-                arrowprops=dict(arrowstyle='->', color='black', lw=4, mutation_scale=25))
+                arrowprops=dict(arrowstyle='->', color='black', lw=3, mutation_scale=25))
 
     # Recuadro problema en la punta
     ax.text(81, 50, 'Baja productividad',
@@ -26,65 +26,73 @@ def generar_ishikawa():
             bbox=dict(boxstyle="round,pad=0.4", facecolor='#D3D3D3', edgecolor='none'))
 
     # Espinas diagonales y cajas de categoría
-    espinas = [
-        {'cat': 'Método', 'start': (40, 50), 'end': (35, 80)},
-        {'cat': 'Mano de obra', 'start': (40, 50), 'end': (20, 80)},
-        {'cat': 'Maquinaria', 'start': (60, 50), 'end': (55, 20)},
-        {'cat': 'Materia prima', 'start': (60, 50), 'end': (40, 20)}
-    ]
-
-    for espina in espinas:
-        sx, sy = espina['start']
-        ex, ey = espina['end']
-        ax.plot([sx, ex], [sy, ey], color='black', linewidth=2.5, solid_capstyle='round')
-        ax.text(ex, ey, espina['cat'],
-                fontsize=10, fontweight='bold', color='black',
-                ha='center', va='center',
-                bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
-
-    # Causas horizontales con líneas y textos
-    # Método
-    ax.plot([30, 35], [75, 75], color='black', linewidth=2)
-    ax.text(29, 75, "Falta de una gestión de calidad, inspección y control en los productos terminados",
-            fontsize=9, color='black', ha='right', va='center',
-            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
-    ax.plot([26, 35], [65, 65], color='black', linewidth=2)
-    ax.text(25, 65, "Falta de una optimización en la calidad y producción del producto",
-            fontsize=9, color='black', ha='right', va='center',
-            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
-    ax.plot([23, 35], [55, 55], color='black', linewidth=2)
-    ax.text(22, 55, "Falta de orden, limpieza y obstrucciones en las líneas de producción",
-            fontsize=9, color='black', ha='right', va='center',
+    ax.plot([40, 45], [50, 80], color='black', lw=2, solid_capstyle='round')
+    ax.text(45, 82, 'Método', fontsize=10, fontweight='bold', color='black',
+            ha='center', va='bottom',
             bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
 
-    # Mano de obra
-    ax.plot([15, 20], [72, 72], color='black', linewidth=2)
-    ax.text(14, 72, "Entregas de productos fuera de tiempo",
-            fontsize=9, color='black', ha='right', va='center',
-            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
-    ax.plot([15, 20], [62, 62], color='black', linewidth=2)
-    ax.text(14, 62, "Falta de capacitaciones a los trabajadores",
-            fontsize=9, color='black', ha='right', va='center',
+    ax.plot([40, 25], [50, 80], color='black', lw=2, solid_capstyle='round')
+    ax.text(25, 82, 'Mano de obra', fontsize=10, fontweight='bold', color='black',
+            ha='center', va='bottom',
             bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
 
-    # Maquinaria
-    ax.plot([45, 55], [40, 40], color='black', linewidth=2)
-    ax.text(44, 40, "Fallas y paradas en la producción de calzados",
-            fontsize=9, color='black', ha='right', va='center',
-            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
-    ax.plot([45, 55], [30, 30], color='black', linewidth=2)
-    ax.text(44, 30, "Falta de mantenimiento en la fabricación del producto",
-            fontsize=9, color='black', ha='right', va='center',
+    ax.plot([60, 65], [50, 20], color='black', lw=2, solid_capstyle='round')
+    ax.text(65, 18, 'Maquinaria', fontsize=10, fontweight='bold', color='black',
+            ha='center', va='top',
             bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
 
-    # Materia prima
-    ax.plot([25, 40], [35, 35], color='black', linewidth=2)
-    ax.text(24, 35, "Materia prima de mala calidad",
-            fontsize=9, color='black', ha='right', va='center',
+    ax.plot([60, 45], [50, 20], color='black', lw=2, solid_capstyle='round')
+    ax.text(45, 18, 'Materia prima', fontsize=10, fontweight='bold', color='black',
+            ha='center', va='top',
             bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
-    ax.plot([25, 40], [25, 25], color='black', linewidth=2)
-    ax.text(24, 25, "Desperdicios de M.P y acumulación para el abastecimiento en proceso",
-            fontsize=9, color='black', ha='right', va='center',
+
+    # Causas - Método (lado derecho)
+    ax.plot([42, 52], [73, 73], color='black', lw=2, solid_capstyle='round')
+    ax.text(53, 73, "Falta de una gestión de calidad, inspección y control en los productos terminados",
+            fontsize=10, color='black', ha='left', va='center',
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
+
+    ax.plot([41, 52], [63, 63], color='black', lw=2, solid_capstyle='round')
+    ax.text(53, 63, "Falta de una optimización en la calidad y producción del producto",
+            fontsize=10, color='black', ha='left', va='center',
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
+
+    ax.plot([40, 52], [53, 53], color='black', lw=2, solid_capstyle='round')
+    ax.text(53, 53, "Falta de orden, limpieza y obstrucciones en las líneas de producción",
+            fontsize=10, color='black', ha='left', va='center',
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
+
+    # Causas - Mano de obra (lado izquierdo)
+    ax.plot([15, 23], [73, 73], color='black', lw=2, solid_capstyle='round')
+    ax.text(14, 73, "Entregas de productos fuera de tiempo",
+            fontsize=10, color='black', ha='right', va='center',
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
+
+    ax.plot([15, 22], [63, 63], color='black', lw=2, solid_capstyle='round')
+    ax.text(14, 63, "Falta de capacitaciones a los trabajadores",
+            fontsize=10, color='black', ha='right', va='center',
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
+
+    # Causas - Maquinaria (lado derecho)
+    ax.plot([62, 75], [35, 35], color='black', lw=2, solid_capstyle='round')
+    ax.text(76, 35, "Fallas y paradas en la producción de calzados",
+            fontsize=10, color='black', ha='left', va='center',
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
+
+    ax.plot([63, 75], [25, 25], color='black', lw=2, solid_capstyle='round')
+    ax.text(76, 25, "Falta de mantenimiento en la fabricación del producto",
+            fontsize=10, color='black', ha='left', va='center',
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
+
+    # Causas - Materia prima (lado izquierdo)
+    ax.plot([30, 43], [35, 35], color='black', lw=2, solid_capstyle='round')
+    ax.text(29, 35, "Materia prima de mala calidad",
+            fontsize=10, color='black', ha='right', va='center',
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
+
+    ax.plot([30, 44], [25, 25], color='black', lw=2, solid_capstyle='round')
+    ax.text(29, 25, "Desperdicios de M.P y acumulación para el abastecimiento en proceso",
+            fontsize=10, color='black', ha='right', va='center',
             bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="black", lw=1))
 
     plt.tight_layout()
