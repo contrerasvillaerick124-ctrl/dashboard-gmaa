@@ -316,14 +316,9 @@ with tab1:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("""
-    <div class="info-box">
-        <strong>📋 Herramientas de Calidad Utilizadas:</strong><br>
-        • <strong>Recolección:</strong> DOP (Diario de Operaciones de Producción)<br>
-        • <strong>Análisis:</strong> Diagrama de Pareto (Principio 80/20) + Diagrama de Ishikawa (4M)<br>
-        • <strong>Mejora:</strong> Ciclo PHVA (Planificar-Hacer-Verificar-Actuar)
-    </div>
-    """, unsafe_allow_html=True)
+    st.info("""
+📊 **Recolección de Datos (DOP):** Para obtener la información real del problema, se utilizó el **Diseño de Operaciones de Producción (DOP)**. Esta herramienta consistió en registrar cronométricamente los tiempos de cada una de las 7 operaciones del proceso de calzado y documentar las 3 inspecciones clave. A través de este registro diario en la línea de producción, se pudieron cuantificar las fallas exactas (paradas de máquina, defectos por falta de control y mermas), lo cual permitió construir la base de datos para el análisis de Pareto y el Diagrama de Ishikawa.
+    """)
 
     w2h_data = {
         "Pregunta": [
