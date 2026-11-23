@@ -1,14 +1,15 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import matplotlib
+matplotlib.use('Agg')
 
 from datos import (
     KPIS, get_pareto_dataframe, PARETO_M_CATEGORIES,
-    PHVA_DETALLADO, PHVA_PHASES
+    PHVA_DETALLADO, PHVA_PHASES, PHVA_TEXTOS
 )
-from graficos import (
-    generar_ishikawa, generar_phva_donut, generar_kpi_barras, generar_pareto
-)
+from graficos import generar_ishikawa, generar_phva_donut, generar_kpi_barras
 
 st.set_page_config(
     layout="wide",
@@ -17,183 +18,85 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ==================== CSS PREMIUM ====================
+# CSS Premium
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
+    
     :root {
         --primary: #1F4E78;
-        --primary-dark: #15406E;
         --secondary: #2C3E50;
-        --success: #52BE80;
-        --success-dark: #45A056;
-        --warning: #F5B041;
-        --warning-dark: #D68910;
+        --success: #27AE60;
+        --warning: #ED7D31;
         --danger: #E74C3C;
-        --info: #2E86C1;
-        --info-light: #E8F4FD;
-        --bg: #F4F6F9;
+        --purple: #7030A0;
+        --green: #70AD47;
+        --bg: #FFFFFF;
         --card-bg: #FFFFFF;
         --border: #E8ECEF;
         --text: #2C3E50;
         --text-muted: #6C757D;
-        --pastel-blue: #E8F4FD;
-        --pastel-green: #E9F7EF;
-        --pastel-orange: #FDF3E7;
-        --pastel-purple: #F4EEFA;
     }
 
     .main .block-container {
-        padding-top: 2rem;
-        padding-bottom: 3rem;
+        padding-top: 1.5rem;
+        padding-bottom: 2rem;
         max-width: 100%;
     }
 
-    /* Ocultar elementos de Streamlit para aspecto nativo */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .stDeployButton {display: none;}
-    .stAppHeader {display: none;}
 
-    /* Fondo general */
     .stApp {
         background-color: var(--bg);
         font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
     }
 
-    /* Títulos */
     h1, h2, h3, h4, h5, h6 {
         color: var(--primary) !important;
         font-family: 'Inter', 'Segoe UI', Arial, sans-serif !important;
         font-weight: 700 !important;
     }
 
-    /* ===== HEADER PREMIUM ===== */
-    .premium-header {
-        background: linear-gradient(135deg, #1F4E78 0%, #15406E 100%);
-        border-radius: 16px;
-        padding: 2rem 2.5rem;
-        color: white;
-        margin-bottom: 2rem;
-        box-shadow: 0 8px 24px rgba(31, 78, 120, 0.3);
-        position: relative;
-        overflow: hidden;
-    }
-    .premium-header::before {
-        content: "";
-        position: absolute;
-        top: -50%;
-        right: -10%;
-        width: 200px;
-        height: 200px;
-        background: rgba(255,255,255,0.08);
-        border-radius: 50%;
-        transform: translate(50%, -50%);
-    }
-    .premium-header h1 {
-        color: white !important;
-        margin: 0 0 0.5rem 0;
-        font-size: 2rem;
-        font-weight: 700;
-    }
-    .premium-header p {
-        color: rgba(255,255,255,0.9) !important;
-        margin: 0;
-        font-size: 1.1rem;
-        font-weight: 400;
-    }
-    .premium-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        background: rgba(255,255,255,0.15);
-        border: 1px solid rgba(255,255,255,0.2);
-        border-radius: 8px;
-        padding: 6px 12px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-bottom: 1rem;
-        backdrop-filter: blur(4px);
-    }
-
-    /* ===== TARJETAS KPI PREMIUM ===== */
-    .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-    .kpi-card {
+    [data-testid="stMetric"] {
         background: var(--card-bg);
-        border-radius: 16px;
-        padding: 1.75rem 1.5rem;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
         border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 4px 20px rgba(31, 78, 120, 0.08);
         transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
     }
-    .kpi-card:hover {
-        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    [data-testid="stMetric"]:hover {
+        box-shadow: 0 8px 30px rgba(31, 78, 120, 0.12);
         transform: translateY(-2px);
     }
-    .kpi-card::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-        background: var(--primary);
-    }
-    .kpi-card.success::before { background: var(--success); }
-    .kpi-card.warning::before { background: var(--warning); }
-    .kpi-card.info::before { background: var(--info); }
-    .kpi-label {
-        color: var(--text-muted);
-        font-size: 0.85rem;
-        font-weight: 600;
+    [data-testid="stMetric"] label {
+        color: var(--text-muted) !important;
+        font-size: 0.875rem !important;
+        font-weight: 600 !important;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-bottom: 0.75rem;
-        display: block;
     }
-    .kpi-value {
-        color: var(--primary);
-        font-size: 2.25rem;
-        font-weight: 700;
-        margin: 0;
-        line-height: 1.1;
+    [data-testid="stMetric"] [data-testid="stMetricValue"] {
+        color: var(--primary) !important;
+        font-size: 2.5rem !important;
+        font-weight: 700 !important;
     }
-    .kpi-delta {
-        display: inline-block;
-        background: var(--pastel-green);
-        color: var(--success-dark);
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        margin-top: 0.5rem;
-        border: 1px solid var(--success);
-    }
-    .kpi-delta.warning {
-        background: var(--pastel-orange);
-        color: var(--warning-dark);
-        border-color: var(--warning);
+    [data-testid="stMetric"] [data-testid="stMetricDelta"] {
+        font-size: 1rem !important;
+        font-weight: 600 !important;
     }
 
-    /* ===== TABS PREMIUM ===== */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        gap: 6px;
         background-color: transparent;
         padding: 0 4px;
-        border-bottom: none;
     }
     .stTabs [data-baseweb="tab"] {
-        background-color: var(--card-bg);
-        border-radius: 12px 12px 0 0;
+        background-color: #F8F9FA;
+        border-radius: 10px 10px 0 0;
         padding: 14px 28px;
         color: var(--text-muted);
         font-weight: 600;
@@ -201,142 +104,60 @@ st.markdown("""
         border: 1px solid var(--border);
         border-bottom: none;
         transition: all 0.2s ease;
-        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
     }
     .stTabs [data-baseweb="tab"]:hover {
-        background-color: #F0F4F8;
+        background-color: #EFF3F7;
         color: var(--primary);
-        border-color: var(--primary);
     }
     .stTabs [aria-selected="true"] {
-        background-color: var(--card-bg) !important;
-        color: var(--primary) !important;
+        background-color: var(--primary) !important;
+        color: white !important;
         border-color: var(--primary) !important;
-        border-bottom: 2px solid var(--primary);
-        box-shadow: 0 -2px 10px rgba(31, 78, 120, 0.1);
     }
 
-    /* ===== SIDEBAR PREMIUM ===== */
     [data-testid="stSidebar"] {
-        background-color: var(--card-bg);
+        background-color: #F8F9FA;
         border-right: 1px solid var(--border);
     }
     [data-testid="stSidebar"] .stMarkdown h3 {
         color: var(--primary);
         font-size: 1.1rem;
         font-weight: 700;
-        margin-bottom: 1rem;
     }
 
-    /* ===== DATA TABLE ===== */
     .stDataFrame {
         border-radius: 12px;
         overflow: hidden;
         border: 1px solid var(--border);
-        box-shadow: 0 2px 10px rgba(0,0,0,0.04);
     }
     .stTable {
         border-radius: 12px;
         overflow: hidden;
     }
 
-    /* ===== RADIO BUTTONS PREMIUM ===== */
     .stRadio > div {
         flex-direction: row;
         gap: 12px;
         flex-wrap: wrap;
     }
     .stRadio label {
-        background: var(--card-bg);
+        background: #F8F9FA;
         border: 2px solid var(--border);
         border-radius: 10px;
         padding: 10px 20px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
-        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
     }
     .stRadio label:hover {
         border-color: var(--primary);
-        background: var(--pastel-blue);
+        background: #EFF3F7;
     }
 
-    /* ===== CALLOUTS / ANOTACIONES ===== */
-    .callout {
-        background: var(--card-bg);
-        border-radius: 12px;
-        padding: 1.25rem 1.5rem;
-        margin: 1.5rem 0;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        border: 1px solid var(--border);
-        position: relative;
-        overflow: hidden;
-        display: flex;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-    .callout::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-    }
-    .callout.info::before { background: var(--info); }
-    .callout.success::before { background: var(--success); }
-    .callout.warning::before { background: var(--warning); }
-    .callout .callout-icon {
-        font-size: 1.5rem;
-        flex-shrink: 0;
-        margin-top: 0.1rem;
-    }
-    .callout .callout-content {
-        flex: 1;
-    }
-    .callout-title {
-        font-weight: 700;
-        font-size: 0.95rem;
-        margin-bottom: 0.5rem;
-        color: var(--text);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .callout-body {
-        color: var(--text-muted);
-        font-size: 0.95rem;
-        line-height: 1.7;
-        margin: 0;
-    }
-    .callout.info .callout-title { color: var(--info); }
-    .callout.success .callout-title { color: var(--success); }
-    .callout.warning .callout-title { color: var(--warning); }
-
-    /* ===== SECTION HEADERS ===== */
-    .section-header {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin: 2rem 0 1.5rem 0;
-    }
-    .section-header::before {
-        content: "";
-        width: 4px;
-        height: 28px;
-        background: var(--primary);
-        border-radius: 2px;
-    }
-    .section-header h2 {
-        margin: 0;
-        font-size: 1.4rem;
-    }
-
-    /* ===== PHVA PHASE CARD ===== */
     .phase-card {
         background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
         border-radius: 16px;
-        padding: 1.75rem;
+        padding: 1.5rem;
         border: 1px solid var(--border);
         box-shadow: 0 4px 20px rgba(0,0,0,0.05);
         height: 100%;
@@ -347,7 +168,7 @@ st.markdown("""
     }
     .phase-card p {
         margin: 0;
-        line-height: 1.8;
+        line-height: 1.7;
         font-size: 1.05rem;
         color: var(--text);
     }
@@ -362,70 +183,102 @@ st.markdown("""
         margin-bottom: 1rem;
     }
 
-    /* ===== FOOTER ===== */
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 1rem;
+    }
+    .section-header::before {
+        content: "";
+        width: 4px;
+        height: 28px;
+        background: var(--primary);
+        border-radius: 2px;
+    }
+
     .dashboard-footer {
         text-align: center;
         padding: 2rem;
         color: var(--text-muted);
         font-size: 0.85rem;
         border-top: 1px solid var(--border);
-        margin-top: 3rem;
+        margin-top: 2rem;
     }
 
-    /* Ocultar warnings de deprecación */
-    .stAlert { border-radius: 12px; }
+    .info-box {
+        background: #EFF3F7;
+        border-left: 4px solid var(--primary);
+        border-radius: 0 10px 10px 0;
+        padding: 1rem 1.25rem;
+        margin: 1rem 0;
+    }
+    .info-box.success {
+        background: #E8F8F0;
+        border-left-color: var(--success);
+    }
+    .info-box.warning {
+        background: #FFF3E0;
+        border-left-color: var(--warning);
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# ==================== HEADER ====================
-st.markdown("""
-<div class="premium-header">
-    <div class="premium-badge">🏭 GMAA S.A.C. | Sistema de Gestión de Calidad</div>
-    <h1>Dashboard de Mejora Continua</h1>
-    <p>Análisis de productividad, PHVA y KPIs — Calzado GMAA SAC, Trujillo, Perú</p>
-</div>
-""", unsafe_allow_html=True)
+col_logo, col_title = st.columns([1, 10])
+with col_logo:
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #1F4E78 0%, #2C3E50 100%); 
+                border-radius: 12px; padding: 1rem; text-align: center; color: white;
+                box-shadow: 0 4px 15px rgba(31, 78, 120, 0.3);">
+        <div style="font-size: 2.5rem;">🏭</div>
+        <div style="font-weight: 700; font-size: 0.85rem; margin-top: 0.25rem;">GMAA SAC</div>
+    </div>
+    """, unsafe_allow_html=True)
+with col_title:
+    st.markdown("""
+    <div style="padding-top: 0.5rem;">
+        <h1 style="margin: 0; font-size: 2.2rem; background: linear-gradient(90deg, #1F4E78, #2C3E50); 
+                   -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            Dashboard de Mejora Continua
+        </h1>
+        <p style="margin: 0.25rem 0 0 0; color: #6C757D; font-size: 1.1rem; font-weight: 400;">
+            Calzado GMAA SAC — Análisis 5W2H, Pareto, Ishikawa, PHVA & KPIs
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
-# ==================== KPI ROW ====================
+st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
 kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
 with kpi1:
-    st.markdown("""
-    <div class="kpi-card info">
-        <span class="kpi-label">Productividad (unid/hora)</span>
-        <p class="kpi-value">12.5</p>
-        <span class="kpi-delta">+0.7 vs anterior</span>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric(
+        label="Productividad",
+        value=f"{KPIS['productividad_actual']:.1f}",
+        delta=f"+{KPIS['productividad_actual'] - KPIS['productividad_anterior']:.1f} unid/hr",
+        delta_color="normal"
+    )
 
 with kpi2:
-    st.markdown("""
-    <div class="kpi-card success">
-        <span class="kpi-label">Producción Mensual (pares)</span>
-        <p class="kpi-value">35,992.7</p>
-        <span class="kpi-delta warning">+2,179.7 pares</span>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric(
+        label="Producción Mensual",
+        value=f"{KPIS['produccion_actual']:,.1f}".replace(",", "X").replace(".", ",").replace("X", "."),
+        delta=f"+{KPIS['produccion_actual'] - KPIS['produccion_anterior']:,.1f}".replace(",", "X").replace(".", ",").replace("X", "."),
+        delta_color="normal"
+    )
 
 with kpi3:
-    st.markdown("""
-    <div class="kpi-card success">
-        <span class="kpi-label">Beneficio Mensual</span>
-        <p class="kpi-value">S/ 126,827</p>
-        <span class="kpi-delta">Rentable</span>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric(
+        label="Beneficio Mensual",
+        value=f"S/ {KPIS['beneficio_mensual']:,}".replace(",", ".")
+    )
 
 with kpi4:
-    st.markdown("""
-    <div class="kpi-card info">
-        <span class="kpi-label">Relación B/C</span>
-        <p class="kpi-value">1.26</p>
-        <span class="kpi-delta">1.26 : 1</span>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric(
+        label="Relación B/C",
+        value=f"{KPIS['relacion_bc']:.2f}",
+        help="Beneficio / Costo = 1.26 (Rentable)"
+    )
 
-# ==================== SIDEBAR FILTER ====================
 st.sidebar.markdown("### 🔍 Filtros de Análisis")
 categoria_seleccionada = st.sidebar.selectbox(
     "Filtrar Pareto por Categoría (4M):",
@@ -440,7 +293,6 @@ if categoria_seleccionada != "Todas":
 else:
     df_filtrado = df_pareto.copy()
 
-# ==================== TABS ====================
 tab1, tab2, tab3, tab4 = st.tabs([
     "1. Contexto (5W2H)",
     "2. Análisis (Pareto & Ishikawa)",
@@ -448,42 +300,28 @@ tab1, tab2, tab3, tab4 = st.tabs([
     "4. KPIs & Resultados"
 ])
 
-# ==================== TAB 1: 5W2H ====================
 with tab1:
     st.markdown("""
     <div class="section-header">
-        <h2>Definición del Problema — Metodología 5W2H</h2>
+        <h2 style="margin: 0;">Definición del Problema — Metodología 5W2H</h2>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("""
-    <div class="callout info">
-        <span class="callout-icon">🎯</span>
-        <div class="callout-content">
-            <div class="callout-title">Planteamiento del Problema</div>
-            <p class="callout-body">
-                <strong>Calzado GMAA SAC</strong>, empresa dedicada a la fabricación de calzado en
-                <strong>Trujillo, Perú</strong>, presenta una <strong>baja productividad en su línea de
-                producción (11.8 unid/hora)</strong>. Esta situación genera
-                <strong>pérdidas estimadas en S/ 126,827 mensuales</strong> debido a fallas en el control
-                de producción, paradas de máquina y falta de mantenimiento. Para resolverlo, se aplican
-                herramientas de calidad como <strong>Pareto, Ishikawa y el ciclo PHVA</strong>.
-            </p>
-        </div>
+    <div class="info-box" style="background: linear-gradient(135deg, #E8F0FE 0%, #EFF3F7 100%); border-left-color: #1F4E78; font-size: 1.05rem; line-height: 1.8;">
+        <strong>🎯 PLANTEAMIENTO DEL PROBLEMA</strong><br><br>
+        <strong>Calzado GMAA SAC</strong>, empresa dedicada a la fabricación de calzado en <strong>Trujillo, Perú</strong>, presenta una <strong>baja productividad en su línea de producción (11.8 unid/hora)</strong>. 
+        Esta situación genera <strong>pérdidas estimadas en S/ 126,827 mensuales</strong> debido a fallas en el control de producción, paradas de máquina y falta de mantenimiento. 
+        Para resolverlo, se aplican herramientas de calidad como <strong>Pareto, Ishikawa y el ciclo PHVA</strong>.
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("""
-    <div class="callout info">
-        <span class="callout-icon">📋</span>
-        <div class="callout-content">
-            <div class="callout-title">Herramientas de Calidad Utilizadas</div>
-            <p class="callout-body">
-                • <strong>Recolección:</strong> DOP (Diario de Operaciones de Producción)<br>
-                • <strong>Análisis:</strong> Diagrama de Pareto (Principio 80/20) + Diagrama de Ishikawa (4M)<br>
-                • <strong>Mejora:</strong> Ciclo PHVA (Planificar-Hacer-Verificar-Actuar)
-            </p>
-        </div>
+    <div class="info-box">
+        <strong>📋 Herramientas de Calidad Utilizadas:</strong><br>
+        • <strong>Recolección:</strong> DOP (Diario de Operaciones de Producción)<br>
+        • <strong>Análisis:</strong> Diagrama de Pareto (Principio 80/20) + Diagrama de Ishikawa (4M)<br>
+        • <strong>Mejora:</strong> Ciclo PHVA (Planificar-Hacer-Verificar-Actuar)
     </div>
     """, unsafe_allow_html=True)
 
@@ -516,7 +354,7 @@ with tab1:
         'font-family': 'Inter, Arial, sans-serif',
         'font-size': '0.95rem'
     }).set_table_styles([
-        {'selector': 'th', 'props': [('background-color', '#1F4E78'), ('color', 'white'),
+        {'selector': 'th', 'props': [('background-color', '#1F4E78'), ('color', 'white'), 
                                      ('font-weight', '700'), ('font-size', '1rem'),
                                      ('padding', '12px'), ('text-align', 'left')]},
         {'selector': 'td', 'props': [('padding', '12px'), ('border', '1px solid #E8ECEF'),
@@ -525,85 +363,136 @@ with tab1:
         {'selector': 'tr:hover', 'props': [('background-color', '#EFF3F7')]}
     ]))
 
-# ==================== TAB 2: ANÁLISIS ====================
 with tab2:
     st.markdown("""
     <div class="section-header">
-        <h2>Análisis de Causas — Pareto & Ishikawa</h2>
+        <h2 style="margin: 0;">Análisis de Causas — Pareto & Ishikawa</h2>
     </div>
     """, unsafe_allow_html=True)
 
     col_pareto, col_ishikawa = st.columns([1, 1], gap="large")
 
-    # --- PARETO ---
     with col_pareto:
         st.markdown("#### 📊 Diagrama de Pareto - Causas de Baja Productividad")
 
         if len(df_filtrado) > 0:
-            fig_pareto = generar_pareto(df_filtrado)
+            from plotly.subplots import make_subplots
+            fig_pareto = make_subplots(specs=[[{"secondary_y": True}]])
+
+            fig_pareto.add_trace(
+                go.Bar(
+                    x=df_filtrado["Causa"],
+                    y=df_filtrado["Frecuencia"],
+                    name="Frecuencia",
+                    marker_color="#1F4E78",
+                    text=df_filtrado["Frecuencia"],
+                    textposition="outside",
+                    textfont=dict(size=12, color="#1F4E78", family="Arial Black"),
+                    width=0.55,
+                    hovertemplate="<b>%{x}</b><br>Frecuencia: %{y}<br>%{customdata:.1f}%<extra></extra>",
+                    customdata=df_filtrado["Porcentaje"]
+                ),
+                secondary_y=False
+            )
+
+            fig_pareto.add_trace(
+                go.Scatter(
+                    x=df_filtrado["Causa"],
+                    y=df_filtrado["Porcentaje_Acumulado"],
+                    name="% Acumulado",
+                    mode="lines+markers+text",
+                    line=dict(color="#C0392B", width=3),
+                    marker=dict(size=10, color="#C0392B", symbol="circle", line=dict(width=2, color="#FFFFFF")),
+                    text=df_filtrado["Porcentaje_Acumulado"].apply(lambda x: f"{x:.1f}%"),
+                    textposition="top center",
+                    textfont=dict(size=11, color="#C0392B", family="Arial Black"),
+                    hovertemplate="<b>%{x}</b><br>% Acumulado: %{y:.1f}%<extra></extra>"
+                ),
+                secondary_y=True
+            )
+
+            fig_pareto.add_hline(
+                y=80, line_dash="dot", line_color="#C0392B", line_width=2.5,
+                secondary_y=True
+            )
+
+            fig_pareto.update_xaxes(
+                tickangle=-30,
+                tickfont=dict(size=10, family="Arial"),
+                title_text="",
+                showgrid=False
+            )
+            fig_pareto.update_yaxes(
+                title_text="<b>Frecuencia</b>", secondary_y=False,
+                showgrid=True, gridcolor="#F0F0F0",
+                title_font=dict(size=12, color="#1F4E78"),
+                rangemode="tozero"
+            )
+            fig_pareto.update_yaxes(
+                title_text="<b>% Acumulado</b>", secondary_y=True,
+                range=[0, 105], showgrid=False,
+                title_font=dict(size=12, color="#C0392B"),
+                tickfont=dict(size=10, color="#C0392B"),
+                ticksuffix="%"
+            )
+
+            fig_pareto.update_layout(
+                height=540,
+                template="plotly_white",
+                showlegend=True,
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1,
+                    font=dict(size=11, family="Arial"),
+                    bgcolor="rgba(255,255,255,0.95)",
+                    bordercolor="#E0E0E0",
+                    borderwidth=1
+                ),
+                margin=dict(t=50, b=150, l=60, r=60),
+                plot_bgcolor="#FFFFFF",
+                paper_bgcolor="#FFFFFF",
+                hovermode="x unified",
+                title=dict(
+                    text="<b>Diagrama de Pareto - Causas de Baja Productividad</b>",
+                    font=dict(size=16, color="#1F4E78", family="Arial"),
+                    x=0.5,
+                    y=0.97
+                )
+            )
+
             st.plotly_chart(fig_pareto, width='stretch')
 
-            st.markdown("""
-            <div class="callout info">
-                <span class="callout-icon">📌</span>
-                <div class="callout-content">
-                    <div class="callout-title">Análisis Pareto (Regla 80/20)</div>
-                    <p class="callout-body">
-                        Las primeras 6 causas (Falta de control, Paradas, Mantenimiento, Inspección, Mermas y
-                        Recepción) acumulan el 80% del problema. Esto nos indica que si concentramos los
-                        esfuerzos en resolver estos 6 puntos críticos, eliminaremos la mayor parte de la
-                        baja productividad.
-                    </p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.info("""
+            📌 **Análisis Pareto (Regla 80/20):** Las primeras 6 causas (Falta de control, Paradas, Mantenimiento, Inspección, Mermas y Recepción) acumulan el 80% del problema. Esto nos indica que si concentramos los esfuerzos en resolver estos 6 puntos críticos, eliminaremos la mayor parte de la baja productividad.
+            """)
+
         else:
             st.warning("No hay datos para la categoría seleccionada.")
 
-    # --- ISHIKAWA ---
     with col_ishikawa:
         st.markdown("#### 🐟 Diagrama de Ishikawa (Espina de Pescado) — 4M")
-
+        
         fig_ishikawa = generar_ishikawa()
         st.pyplot(fig_ishikawa, width='stretch')
+        
+        st.success("""
+        🐟 **Causa Raíz (Ishikawa 4M):** Identificamos que el problema no es solo de máquinas. La 'Falta de control' (Métodos) y las 'Entregas tardías' (Personas) son igual de graves. La causa raíz principal es la ausencia de un sistema de gestión de calidad que estandarice los procesos.
+        """)
 
-        st.markdown("""
-        <div class="callout success">
-            <span class="callout-icon">🐟</span>
-            <div class="callout-content">
-                <div class="callout-title">Causa Raíz (Ishikawa 4M)</div>
-                <p class="callout-body">
-                    Identificamos que el problema no es solo de máquinas. La <strong>'Falta de control'</strong>
-                    (Métodos) y las <strong>'Entregas tardías'</strong> (Personas) son igual de graves. La causa
-                    raíz principal es la ausencia de un sistema de gestión de calidad que estandarice los procesos.
-                </p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-# ==================== TAB 3: PHVA ====================
 with tab3:
     st.markdown("""
     <div class="section-header">
-        <h2>Ciclo PHVA — Mejora Continua</h2>
+        <h2 style="margin: 0;">Ciclo PHVA — Mejora Continua</h2>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("""
-    <div class="callout info">
-        <span class="callout-icon">🔄</span>
-        <div class="callout-content">
-            <div class="callout-title">El Problema y la Solución</div>
-            <p class="callout-body">
-                <strong>El Problema:</strong> Línea de producción con fallas constantes, sin inspección y con
-                máquinas paradas.<br>
-                <strong>La Solución:</strong> Aplicar el ciclo PHVA para ordenar la empresa.
-            </p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    **El Problema:** Línea de producción con fallas constantes, sin inspección y con máquinas paradas. **La Solución:** Aplicar el ciclo PHVA para ordenar la empresa.
+    """)
 
-    # Selector de fase
     fase_seleccionada = st.radio(
         "Selecciona una fase para ver el detalle:",
         options=list(PHVA_DETALLADO.keys()),
@@ -630,7 +519,7 @@ with tab3:
         }
 
         st.markdown(f"""
-        <div class="phase-card" style="border-left: 6px solid {color};">
+        <div class="phase-card" style="border-left: 6px solid {color}; background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);">
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem;">
                 <span style="font-size: 1.8rem;">{icon}</span>
                 <span class="phase-badge" style="{badge_styles.get(color, 'background:#6C757D; color:white;')}">{fase_seleccionada}</span>
@@ -641,40 +530,20 @@ with tab3:
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown("""
-        <div class="callout warning">
-            <span class="callout-icon">🚨</span>
-            <div class="callout-content">
-                <div class="callout-title">Lo que hacíamos mal vs. Lo que hacemos ahora</div>
-                <p class="callout-body">
-                    <strong>Lo que hacíamos mal:</strong> No teníamos métricas, no había mantenimiento
-                    preventivo y los operarios no estaban capacitados.<br>
-                    <strong>Lo que hacemos ahora:</strong> Implementamos 5S, medimos la productividad a
-                    diario y estandarizamos el proceso. Resultado: Pasamos de 11.8 a 12.5 unidades por hora.
-                </p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.warning("""
+        🚨 **Lo que hacíamos mal:** No teníamos métricas, no había mantenimiento preventivo y los operarios no estaban capacitados. 
+        ✅ **Lo que hacemos ahora:** Implementamos 5S, medimos la productividad a diario y estandarizamos el proceso. Resultado: Pasamos de 11.8 a 12.5 unidades por hora.
+        """)
 
-        st.markdown("""
-        <div class="callout success">
-            <span class="callout-icon">✅</span>
-            <div class="callout-content">
-                <div class="callout-title">Cierre del ciclo PHVA</div>
-                <p class="callout-body">
-                    Aplicando el PHVA logramos el objetivo principal (<strong>12.5 unid/hora</strong>).
-                    El siguiente paso es mantener este estándar mediante <strong>auditorías mensuales</strong>
-                    y la mejora continua institucionalizada.
-                </p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.success("""
+        **Cierre del ciclo:** Aplicando el PHVA logramos el objetivo principal (**12.5 unid/hora**). 
+        El siguiente paso es mantener este estándar mediante **auditorías mensuales** y la mejora continua institucionalizada.
+        """)
 
-# ==================== TAB 4: KPIs ====================
 with tab4:
     st.markdown("""
     <div class="section-header">
-        <h2>Indicadores Clave — Comparativo Antes vs Después</h2>
+        <h2 style="margin: 0;">Indicadores Clave — Comparativo Antes vs Después</h2>
     </div>
     """, unsafe_allow_html=True)
 
@@ -739,23 +608,10 @@ with tab4:
         fig_kpi = generar_kpi_barras()
         st.plotly_chart(fig_kpi, width='stretch')
 
-    st.markdown("""
-    <div class="callout success">
-        <span class="callout-icon">💰</span>
-        <div class="callout-content">
-            <div class="callout-title">Impacto en el Negocio</div>
-            <p class="callout-body">
-                La mejora en la productividad no solo nos hizo cumplir la meta técnica, sino que
-                generó un aumento en la producción de <strong>+2,179.7 pares al mes</strong>.
-                Esto se traduce en un beneficio económico real de <strong>S/ 126,827 mensuales</strong>
-                y una relación Beneficio/Costo de <strong>1.26</strong> (por cada sol invertido,
-                ganamos 0.26 soles).
-            </p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.success("""
+    💰 **Impacto en el Negocio:** La mejora en la productividad no solo nos hizo cumplir la meta técnica, sino que generó un aumento en la producción de +2,179.7 pares al mes. Esto se traduce en un beneficio económico real de **S/ 126,827 mensuales** y una relación Beneficio/Costo de 1.26 (por cada sol invertido, ganamos 0.26 soles).
+    """)
 
-# ==================== FOOTER ====================
 st.markdown("""
 <div class="dashboard-footer">
     <strong>Dashboard de Mejora Continua — Calzado GMAA SAC</strong><br>
