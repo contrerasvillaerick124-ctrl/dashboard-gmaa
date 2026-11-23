@@ -358,6 +358,21 @@ with tab1:
         {'selector': 'tr:hover', 'props': [('background-color', '#EFF3F7')]}
     ]))
 
+    st.markdown("""
+    <div style="background:#F8F9FA; border:1px solid #E8ECEF; border-radius:12px; padding:1.5rem 1.75rem; margin:1.5rem 0;">
+        <h3 style="margin:0 0 1rem 0; color:#1F4E78; font-size:1.2rem;">📑 Ficha Técnica: Herramienta de Recolección de Datos (DOP)</h3>
+        <p style="margin:0 0 1rem 0; color:#2C3E50; line-height:1.7;">
+        Para el levantamiento de información real del caso Calzado GMAA SAC, se aplicó la herramienta de <strong>Diseño de Operaciones de Producción (DOP)</strong>. El procedimiento se ejecutó de la siguiente manera:
+        </p>
+        <ul style="color:#2C3E50; line-height:1.8; padding-left:1.2rem;">
+            <li><strong>Registro Cronométrico:</strong> Se midieron los tiempos de las 7 operaciones clave en la línea de producción.</li>
+            <li><strong>Inspecciones de Calidad:</strong> Se documentaron 3 inspecciones críticas (recepción de materia prima, en proceso y producto terminado).</li>
+            <li><strong>Cuantificación de Fallas:</strong> Se llevó un control diario de las paradas de máquina, defectos por falta de control y mermas de material.</li>
+            <li><strong>Resultado:</strong> Esta información permitió construir la base de datos numérica que alimentó el análisis del Diagrama de Pareto (frecuencias) y el Diagrama de Ishikawa (causas raíz).</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
+
 with tab2:
     st.markdown("""
     <div class="section-header">
